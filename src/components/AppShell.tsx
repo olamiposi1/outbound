@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+   import { Link, useLocation, useNavigate } from 'react-router-dom';
+   import { useAuth } from '../context/AuthContext';
 import { brand } from '../config/brand';
 import {
   LayoutDashboard,
@@ -20,6 +21,7 @@ import {
   X,
   ExternalLink,
   ChevronDown,
+  LogOut,
 } from 'lucide-react';
 
 interface AppShellProps {
@@ -41,6 +43,15 @@ interface NavGroup {
 
 export function AppShell({ children }: AppShellProps) {
   const location = useLocation();
+     const navigate = useNavigate();
+   const { user, signOut } = useAuth();
+   const email = user?.email ?? '';
+   const initials = (email.slice(0, 2) || 'U').toUpperCase();
+      const handleSignOut = async () => {
+     setUserMenuOpen(false);
+     navigate('/', { replace: true });
+     await signOut();
+   };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -317,7 +328,7 @@ export function AppShell({ children }: AppShellProps) {
               } p-2 bg-surface border border-border rounded-[8px] shadow-md z-40 flex flex-col gap-1`}
             >
               <div className="px-2 py-1 text-[12px] text-ink-3 border-b border-border truncate">
-                demo@harborandpine.example
+                {email}
               </div>
               <Link
                 to="/"
@@ -328,6 +339,15 @@ export function AppShell({ children }: AppShellProps) {
                 <span>Back to site</span>
                 <ExternalLink className="w-3.5 h-3.5 text-ink-3" strokeWidth={1.5} />
               </Link>
+                 <button
+     type="button"
+     role="menuitem"
+     onClick={handleSignOut}
+     className="px-2 py-1.5 rounded-[6px] text-[13px] text-ink-2 hover:bg-surface-muted hover:text-ink flex items-center justify-between transition-colors duration-150 ease text-left cursor-pointer"
+   >
+     <span>Sign out</span>
+     <LogOut className="w-3.5 h-3.5 text-ink-3" strokeWidth={1.5} />
+   </button>
             </div>
           )}
 
@@ -336,22 +356,22 @@ export function AppShell({ children }: AppShellProps) {
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             aria-haspopup="menu"
             aria-expanded={userMenuOpen}
-            title="demo@harborandpine.example"
+            title="{email}"
             className={`w-full p-1.5 rounded-[8px] hover:bg-surface-muted text-left flex items-center gap-2 transition-colors duration-150 ease focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer ${
               isCollapsed ? 'justify-center' : 'justify-between'
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-7 h-7 rounded-full bg-primary-soft text-primary font-medium text-[12px] flex items-center justify-center shrink-0 border border-primary/20">
-                HP
+                {initials}
               </span>
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-[13px] font-medium text-ink truncate leading-tight">
-                    Harbor & Pine
+                    Your account
                   </span>
                   <span className="text-[11px] text-ink-3 truncate leading-tight">
-                    demo@harborandpine.example
+                    {email}
                   </span>
                 </div>
               )}

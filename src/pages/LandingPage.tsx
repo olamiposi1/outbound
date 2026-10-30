@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { brand } from '../config/brand';
+import { useAuth } from '../context/AuthContext';
 import { sampleHeroStatusMessages } from '../mock/data';
 import { usePageMeta } from '../utils/usePageMeta';
 import { Button } from '../components/Button';
@@ -11,6 +12,7 @@ import { ChevronDown, ArrowRight, Check, X } from 'lucide-react';
 export function LandingPage() {
   usePageMeta(undefined, `${brand.name} — ${brand.tagline}`);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [inputUrl, setInputUrl] = useState('');
   const [urlError, setUrlError] = useState('');
@@ -294,16 +296,14 @@ export function LandingPage() {
 
           {/* Actions */}
           <div className="relative flex items-center gap-3">
-            <Button
-              ref={signInButtonRef}
-              variant="ghost"
-              size="default"
-              onClick={() => setSignInOpen(!signInOpen)}
-              aria-haspopup="dialog"
-              aria-expanded={signInOpen}
-            >
-              Sign in
-            </Button>
+               <Button
+     ref={signInButtonRef}
+     variant="ghost"
+     size="default"
+     onClick={() => navigate(user ? '/app' : '/login')}
+   >
+     {user ? 'Open app' : 'Sign in'}
+   </Button>
 
             {/* Sign in preview popover with soft shadow */}
             {signInOpen && (
