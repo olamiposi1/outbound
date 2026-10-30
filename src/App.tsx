@@ -1,6 +1,7 @@
    import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
    import { AuthProvider } from './context/AuthContext';
    import { FlowProvider } from './context/FlowContext';
+   import { RequireAuth } from './components/RequireAuth';
    import { LandingPage } from './pages/LandingPage';
    import { LoginPage } from './pages/LoginPage';
    import { StartFlowPage } from './pages/StartFlowPage';
@@ -21,54 +22,58 @@
                <Route path="/" element={<LandingPage />} />
                <Route path="/login" element={<LoginPage />} />
                <Route path="/start" element={<StartFlowPage />} />
-               <Route
-                 path="/app"
-                 element={
-                   <AppShell>
-                     <DashboardPage />
-                   </AppShell>
-                 }
-               />
-               <Route
-                 path="/app/inbox"
-                 element={
-                   <AppShell>
-                     <InboxPage />
-                   </AppShell>
-                 }
-               />
-               <Route
-                 path="/app/inbox/:threadId"
-                 element={
-                   <AppShell>
-                     <InboxPage />
-                   </AppShell>
-                 }
-               />
-               <Route
-                 path="/app/campaigns"
-                 element={
-                   <AppShell>
-                     <CampaignsListPage />
-                   </AppShell>
-                 }
-               />
-               <Route
-                 path="/app/campaigns/:id"
-                 element={
-                   <AppShell>
-                     <CampaignDetailPage />
-                   </AppShell>
-                 }
-               />
-               <Route
-                 path="/app/:section"
-                 element={
-                   <AppShell>
-                     <SectionPlaceholderPage />
-                   </AppShell>
-                 }
-               />
+
+               <Route element={<RequireAuth />}>
+                 <Route
+                   path="/app"
+                   element={
+                     <AppShell>
+                       <DashboardPage />
+                     </AppShell>
+                   }
+                 />
+                 <Route
+                   path="/app/inbox"
+                   element={
+                     <AppShell>
+                       <InboxPage />
+                     </AppShell>
+                   }
+                 />
+                 <Route
+                   path="/app/inbox/:threadId"
+                   element={
+                     <AppShell>
+                       <InboxPage />
+                     </AppShell>
+                   }
+                 />
+                 <Route
+                   path="/app/campaigns"
+                   element={
+                     <AppShell>
+                       <CampaignsListPage />
+                     </AppShell>
+                   }
+                 />
+                 <Route
+                   path="/app/campaigns/:id"
+                   element={
+                     <AppShell>
+                       <CampaignDetailPage />
+                     </AppShell>
+                   }
+                 />
+                 <Route
+                   path="/app/:section"
+                   element={
+                     <AppShell>
+                       <SectionPlaceholderPage />
+                     </AppShell>
+                   }
+                 />
+               </Route>
+
                <Route
                  path="/_components"
                  element={
