@@ -1,0 +1,6 @@
+{
+  "name": "Outbound",
+  "description": "Autonomous outbound sales agent that analyzes websites, finds verified leads, writes personalized cold emails, and books meetings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
