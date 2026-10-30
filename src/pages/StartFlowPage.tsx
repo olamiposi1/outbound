@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { brand } from '../config/brand';
 import { usePageMeta } from '../utils/usePageMeta';
 import { useFlow } from '../context/FlowContext';
+   import { useAuth } from '../context/AuthContext';
+   import { saveBusiness } from '../services/businesses';
 import { analyzeSite, getSegments, getLeads, getEmailDraft } from '../services/api';
 import { Segment, Lead, EmailDraft } from '../mock/data';
 import { Button } from '../components/Button';
@@ -26,6 +28,7 @@ export function StartFlowPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const flow = useFlow();
+     const { user } = useAuth();
 
   // Read current step from URL (?step=1..4), defaults to 1
   const stepParam = parseInt(searchParams.get('step') || '1', 10);
@@ -55,7 +58,8 @@ export function StartFlowPage() {
   const [newCompName, setNewCompName] = useState('');
   const [newCompDomain, setNewCompDomain] = useState('');
   const [showAddComp, setShowAddComp] = useState(false);
-
+   const [savingBusiness, setSavingBusiness] = useState(false);
+   const [saveError, setSaveError] = useState('');
   // Step 3 state
   const [segmentsList, setSegmentsList] = useState<Segment[]>([]);
   const [loadingSegments, setLoadingSegments] = useState(false);
@@ -245,6 +249,21 @@ export function StartFlowPage() {
     const updated = flow.analysis.competitors.filter((c) => c.id !== id);
     flow.updateAnalysis({ competitors: updated });
   };
+     const handleContinueFromStep2 = async () => {
+     setSaveError('');
+     if (user && flow.analysis) {
+       setSavingBusiness(true);
+       try {
+         await saveBusiness(flow.analysis.url, flow.analysis.description);
+       } catch {
+         setSaveError("We couldn't save your business. Check your connection and try again.");
+         setSavingBusiness(false);
+         return;
+       }
+       setSavingBusiness(false);
+     }
+     setStep(3);
+   };
 
   // Step 3 handlers
   const handleToggleSegment = (id: string) => {
@@ -642,6 +661,11 @@ export function StartFlowPage() {
             </div>
 
             {/* Stepper Navigation Buttons */}
+               {saveError && (
+     <p role="alert" className="text-[13px] text-danger">
+       {saveError}
+     </p>
+   )}
             <div className="flex items-center justify-between pt-4 border-t border-border">
               <Button
                 variant="secondary"
@@ -650,14 +674,15 @@ export function StartFlowPage() {
               >
                 Back
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => setStep(3)}
-                icon={<ArrowRight className="w-4 h-4" strokeWidth={1.5} />}
-                iconPosition="right"
-              >
-                Continue
-              </Button>
+                 <Button
+     variant="primary"
+     onClick={handleContinueFromStep2}
+     isLoading={savingBusiness}
+     icon={<ArrowRight className="w-4 h-4" strokeWidth={1.5} />}
+     iconPosition="right"
+   >
+     Continue
+   </Button>
             </div>
           </div>
         )}
