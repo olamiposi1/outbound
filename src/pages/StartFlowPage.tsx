@@ -67,6 +67,7 @@ export function StartFlowPage() {
 
   // Step 4 state
   const [loadingLeads, setLoadingLeads] = useState(false);
+  const [leadsError, setLeadsError] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadDraft, setLeadDraft] = useState<EmailDraft | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
@@ -120,16 +121,32 @@ export function StartFlowPage() {
     };
   }, [currentStep]);
 
-  // Load leads when entering step 4
+    // Load leads when entering step 4
   useEffect(() => {
-    if (currentStep === 4) {
-      setLoadingLeads(true);
-      getLeads(flow.selectedSegmentIds).then((leadsData) => {
-        flow.setLeads(leadsData);
-        setLoadingLeads(false);
+    if (currentStep !== 4) return;
+
+    let cancelled = false;
+    setLoadingLeads(true);
+    setLeadsError('');
+
+    getLeads()
+      .then((leadsData) => {
+        if (!cancelled) flow.setLeads(leadsData);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          flow.setLeads([]);
+          setLeadsError('We could not load your leads. Check your connection and try again.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLeads(false);
       });
-    }
-  }, [currentStep, flow.selectedSegmentIds]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentStep]);
 
   // Load draft when lead is selected in drawer
   useEffect(() => {
@@ -838,7 +855,7 @@ export function StartFlowPage() {
           </div>
         )}
 
-        {/* ================= STEP 4: Your First Leads ================= */}
+                {/* ================= STEP 4: Your First Leads ================= */}
         {currentStep === 4 && (
           <div className="flex flex-col gap-6 max-w-4xl mx-auto">
             <div className="flex flex-col gap-2">
@@ -846,17 +863,15 @@ export function StartFlowPage() {
                 Your first leads
               </h1>
               <p className="text-[14px] text-ink-2 leading-relaxed">
-                Click any lead row to inspect the personalized outreach draft and observed site facts.
+                These leads are saved to your account. Click a row to open it.
               </p>
             </div>
 
-            {/* Required Banner in --warm-soft */}
             <div
-              className="p-3.5 rounded-[8px] bg-warm-soft border border-border text-[13px] text-ink font-medium flex items-center justify-between"
+              className="p-3.5 rounded-[8px] bg-warm-soft border border-border text-[13px] text-ink font-medium"
               role="status"
             >
-              <span>Sample data. Connect a mailbox to send.</span>
-              <span className="text-[12px] text-ink-3">Austin commercial territory</span>
+              Sending is off until you connect a mailbox.
             </div>
 
             {/* Leads Table */}
@@ -866,7 +881,7 @@ export function StartFlowPage() {
                   <thead className="bg-surface sticky top-0 border-b border-border text-[12px] text-ink-2 font-medium">
                     <tr className="h-[44px]">
                       <th className="px-4 py-2 font-medium sticky left-0 bg-surface z-10">
-                        Prospect
+                        Contact
                       </th>
                       <th className="px-4 py-2 font-medium">Role</th>
                       <th className="px-4 py-2 font-medium">Company</th>
@@ -878,15 +893,15 @@ export function StartFlowPage() {
                     {loadingLeads ? (
                       <tr>
                         <td colSpan={5} className="h-32 text-center text-ink-3">
-                          Gathering verified leads...
+                          Loading your leads...
                         </td>
                       </tr>
                     ) : flow.leads.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="p-4">
                           <EmptyState
-                            title="No leads available for selected segments"
-                            description="Return to step 3 and select at least one buyer segment."
+                            title="No leads yet"
+                            description={leadsError || 'Leads you add will show up here.'}
                             action={{
                               label: 'Return to segments',
                               onClick: () => setStep(3),
@@ -895,7 +910,7 @@ export function StartFlowPage() {
                         </td>
                       </tr>
                     ) : (
-                      flow.leads.slice(0, 8).map((lead) => {
+                      flow.leads.slice(0, 50).map((lead) => {
                         return (
                           <tr
                             key={lead.id}
@@ -903,7 +918,7 @@ export function StartFlowPage() {
                             className="h-[44px] transition-colors duration-150 ease hover:bg-surface-muted cursor-pointer select-none"
                             tabIndex={0}
                             role="button"
-                            aria-label={`View draft for ${lead.name} at ${lead.company}`}
+                            aria-label={`Open ${lead.name || lead.company}`}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
@@ -912,10 +927,10 @@ export function StartFlowPage() {
                             }}
                           >
                             <td className="px-4 py-2 font-medium text-ink whitespace-nowrap sticky left-0 bg-inherit z-10">
-                              {lead.name}
+                              {lead.name || '—'}
                             </td>
                             <td className="px-4 py-2 text-ink-2 whitespace-nowrap">
-                              {lead.role}
+                              {lead.role || '—'}
                             </td>
                             <td className="px-4 py-2 text-ink whitespace-nowrap">
                               {lead.company}
@@ -923,10 +938,8 @@ export function StartFlowPage() {
                             <td className="px-4 py-2 text-ink-3 text-[13px] whitespace-nowrap">
                               {lead.segmentName}
                             </td>
-                            <td className="px-4 py-2 text-right whitespace-nowrap">
-                              <Badge variant="success" withDot>
-                                Verified
-                              </Badge>
+                            <td className="px-4 py-2 text-right whitespace-nowrap text-[12px] text-ink-3">
+                              Not verified yet
                             </td>
                           </tr>
                         );
@@ -948,7 +961,7 @@ export function StartFlowPage() {
               </Button>
               <div className="flex items-center gap-3">
                 <span className="text-[12px] text-ink-3">
-                  {flow.leads.length} verified sample contacts ready
+                  {flow.leads.length} saved
                 </span>
                 <Button
                   variant="primary"
@@ -1049,8 +1062,12 @@ export function StartFlowPage() {
                   <div className="pt-2 border-t border-border text-[11px] text-ink-3 leading-relaxed">
                     {leadDraft.senderLine}
                   </div>
-                </>
-              ) : null}
+                                </>
+              ) : (
+                <div className="py-12 text-center text-ink-3 text-[14px]">
+                  Personal email drafts for your own leads come in a later step.
+                </div>
+              )}
             </div>
 
             {/* Drawer Footer */}

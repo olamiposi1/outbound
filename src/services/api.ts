@@ -18,6 +18,8 @@ import {
   sampleThreads,
   sampleCampaignDetails,
 } from '../mock/data';
+import { listLeads } from './leads';
+import type { LeadRow } from './leads';
 import { supabase } from '../lib/supabase';
 
 const SIMULATED_DELAY_MS = 250;
@@ -100,41 +102,34 @@ export async function getSegments(analysis: SiteAnalysis): Promise<Segment[]> {
   );
 }
 
-/**
- * Retrieves verified leads filtered by selected segment IDs.
- * // TODO(backend): Call backend lead discovery and verification service (e.g. POST /api/leads/search).
- */
-export async function getLeads(segmentIds?: string[]): Promise<Lead[]> {
-  await sleep(SIMULATED_DELAY_MS);
-  if (!segmentIds || segmentIds.length === 0) {
-    return [...sampleLeads];
-  }
-  return sampleLeads.filter((lead) => segmentIds.includes(lead.segmentId));
+function rowToLead(row: LeadRow): Lead {
+  return {
+    id: row.id,
+    name: row.contact_name ?? '',
+    role: row.contact_role ?? '',
+    company: row.company,
+    segmentId: '',
+    segmentName: row.segment_name ?? 'Not assigned',
+    verified: false,
+  };
 }
 
 /**
- * Retrieves a personalized cold email draft and site evidence for a specific lead.
- * // TODO(backend): Call backend email generation engine with research context (e.g. GET /api/leads/:id/draft).
+ * Retrieves the signed-in user's saved leads.
+ */
+export async function getLeads(): Promise<Lead[]> {
+  const rows = await listLeads();
+  return rows.map(rowToLead);
+}
+
+/**
+ * Retrieves a personalized cold email draft for a lead.
+ * Real leads have no drafts yet; only the old sample leads do.
  */
 export async function getEmailDraft(leadId: string): Promise<EmailDraft | null> {
   await sleep(SIMULATED_DELAY_MS);
   const draft = sampleEmailDrafts[leadId];
-  if (draft) {
-    return { ...draft };
-  }
-
-  // Fallback draft for any lead not explicitly keyed in sampleEmailDrafts
-  const lead = sampleLeads.find((l) => l.id === leadId);
-  return {
-    leadId,
-    subject: `Janitorial and sanitization schedule for ${lead ? lead.company : 'your facility'}`,
-    body: `I noticed your team manages facility operations and tenant experience in Austin. Harbor & Pine provides certified commercial cleaning with dedicated evening crews and documented logs. We keep multi-tenant and clinical spaces compliant and spotless. Would you be open to reviewing our 15-minute facility audit checklist this week?`,
-    evidence: [
-      'Facility profile confirms multi-tenant commercial operations in Austin',
-      'Recent operational updates indicate evening turnover requirements',
-    ],
-    senderLine: '[Sender name], [postal address]. Reply "stop" and we won\'t write again.',
-  };
+  return draft ? { ...draft } : null;
 }
 
 // In-memory state for interactive mutations
