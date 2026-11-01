@@ -6,6 +6,8 @@ import { useFlow } from '../context/FlowContext';
    import { useAuth } from '../context/AuthContext';
    import { saveBusiness } from '../services/businesses';
 import { analyzeSite, getSegments, getLeads, getEmailDraft } from '../services/api';
+import { parseLeadsCsv } from '../utils/parseLeadsCsv';
+import { saveLeads, listLeads } from '../services/leads';
 import { Segment, Lead, EmailDraft } from '../mock/data';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -68,6 +70,8 @@ export function StartFlowPage() {
   // Step 4 state
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [leadsError, setLeadsError] = useState('');
+    const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadDraft, setLeadDraft] = useState<EmailDraft | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
@@ -121,33 +125,82 @@ export function StartFlowPage() {
     };
   }, [currentStep]);
 
-    // Load leads when entering step 4
-  useEffect(() => {
-    if (currentStep !== 4) return;
-
-    let cancelled = false;
+      const loadLeads = async (isCancelled: () => boolean = () => false) => {
     setLoadingLeads(true);
     setLeadsError('');
+    try {
+      const leadsData = await getLeads();
+      if (!isCancelled()) flow.setLeads(leadsData);
+    } catch {
+      if (!isCancelled()) {
+        flow.setLeads([]);
+        setLeadsError('We could not load your leads. Check your connection and try again.');
+      }
+    } finally {
+      if (!isCancelled()) setLoadingLeads(false);
+    }
+  };
 
-    getLeads()
-      .then((leadsData) => {
-        if (!cancelled) flow.setLeads(leadsData);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          flow.setLeads([]);
-          setLeadsError('We could not load your leads. Check your connection and try again.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingLeads(false);
-      });
-
+  // Load leads when entering step 4
+  useEffect(() => {
+    if (currentStep !== 4) return;
+    let cancelled = false;
+    loadLeads(() => cancelled);
     return () => {
       cancelled = true;
     };
   }, [currentStep]);
 
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploadMessage('');
+    if (file.size > 1_000_000) {
+      setUploadMessage('That file is too large. Keep it under 1 MB.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const result = parseLeadsCsv(await file.text());
+      if (result.error) {
+        setUploadMessage(result.error);
+        return;
+      }
+      if (result.leads.length === 0) {
+        setUploadMessage('No leads found in that file.');
+        return;
+      }
+
+      // Skip leads that are already saved, and repeats inside the file
+      const existing = await listLeads();
+      const seen = new Set(existing.map((l) => (l.website ?? l.company).toLowerCase()));
+      const fresh = result.leads.filter((l) => {
+        const key = (l.website ?? l.company).toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const duplicates = result.leads.length - fresh.length;
+
+      const added = await saveLeads(fresh, 'csv');
+      await loadLeads();
+
+      const notes: string[] = [];
+      if (duplicates > 0) notes.push(`${duplicates} already saved`);
+      if (result.skipped > 0) notes.push(`${result.skipped} had no business name`);
+      setUploadMessage(
+        `Added ${added} ${added === 1 ? 'lead' : 'leads'}` +
+          (notes.length ? `. Skipped: ${notes.join(', ')}.` : '.')
+      );
+    } catch {
+      setUploadMessage('We could not save those leads. Check your connection and try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
   // Load draft when lead is selected in drawer
   useEffect(() => {
     if (selectedLead) {
@@ -867,12 +920,26 @@ export function StartFlowPage() {
               </p>
             </div>
 
-            <div
-              className="p-3.5 rounded-[8px] bg-warm-soft border border-border text-[13px] text-ink font-medium"
-              role="status"
-            >
-              Sending is off until you connect a mailbox.
+                        <div className="p-3.5 rounded-[8px] bg-warm-soft border border-border text-[13px] text-ink flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <span>
+                Upload a CSV with a Company column. Website, Contact, Title, Email, Phone, Location and Segment are optional. Sending is off until you connect a mailbox.
+              </span>
+              <label className="inline-flex items-center justify-center px-3.5 py-2 rounded-[8px] border border-border bg-surface text-[13px] font-medium text-ink hover:bg-surface-muted cursor-pointer focus-within:ring-2 focus-within:ring-primary/40 shrink-0">
+                {uploading ? 'Uploading...' : 'Upload CSV'}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={handleCsvUpload}
+                  disabled={uploading}
+                  className="sr-only"
+                />
+              </label>
             </div>
+            {uploadMessage && (
+              <p role="status" className="text-[13px] text-ink-2">
+                {uploadMessage}
+              </p>
+            )}
 
             {/* Leads Table */}
             <div className="rounded-[12px] border border-border bg-surface overflow-hidden">
@@ -901,7 +968,7 @@ export function StartFlowPage() {
                         <td colSpan={5} className="p-4">
                           <EmptyState
                             title="No leads yet"
-                            description={leadsError || 'Leads you add will show up here.'}
+                                                        description={leadsError || 'Upload a CSV to add your first leads.'}
                             action={{
                               label: 'Return to segments',
                               onClick: () => setStep(3),
