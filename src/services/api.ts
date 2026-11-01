@@ -3,7 +3,6 @@ import {
   Segment,
   Lead,
   EmailDraft,
-  sampleSegments,
   sampleLeads,
   sampleEmailDrafts,
   DashboardData,
@@ -62,12 +61,43 @@ export async function analyzeSite(url: string): Promise<SiteAnalysis> {
   };
 }
 /**
- * Retrieves the evaluated buyer segments with fit scores and lead estimates.
- * // TODO(backend): Call backend ICP segmentation and scoring endpoint (e.g. GET /api/segments).
+ * Builds buyer segments from the business analysis through the smooth-handler Edge Function.
+ * Estimated leads are not available yet, so that number is 0 for now.
  */
-export async function getSegments(): Promise<Segment[]> {
-  await sleep(SIMULATED_DELAY_MS);
-  return [...sampleSegments];
+export async function getSegments(analysis: SiteAnalysis): Promise<Segment[]> {
+  const fallback = 'Could not build buyer segments. Please try again.';
+
+  const { data, error } = await supabase.functions.invoke('smooth-handler', {
+    body: {
+      description: analysis.description,
+      targetAudiences: analysis.targetAudiences,
+    },
+  });
+
+  if (error) {
+    let message = fallback;
+    try {
+      const body = await error.context.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // keep the fallback message
+    }
+    throw new Error(message);
+  }
+
+  if (!data?.ok || !Array.isArray(data.segments)) {
+    throw new Error(data?.error ?? fallback);
+  }
+
+  return data.segments.map(
+    (s: { name: string; why: string; fitScore: number }, i: number) => ({
+      id: `seg-${i + 1}`,
+      name: s.name,
+      why: s.why,
+      fitScore: s.fitScore,
+      estimatedLeads: 0,
+    })
+  );
 }
 
 /**

@@ -63,6 +63,7 @@ export function StartFlowPage() {
   // Step 3 state
   const [segmentsList, setSegmentsList] = useState<Segment[]>([]);
   const [loadingSegments, setLoadingSegments] = useState(false);
+    const [segmentsError, setSegmentsError] = useState('');
 
   // Step 4 state
   const [loadingLeads, setLoadingLeads] = useState(false);
@@ -84,15 +85,39 @@ export function StartFlowPage() {
     }
   }, [searchParams, flow]);
 
-  // Load segments when entering step 3
+    // Load segments when entering step 3
   useEffect(() => {
-    if (currentStep === 3) {
-      setLoadingSegments(true);
-      getSegments().then((data) => {
-        setSegmentsList(data);
-        setLoadingSegments(false);
-      });
+    if (currentStep !== 3) return;
+    if (!flow.analysis) {
+      setSegmentsList([]);
+      return;
     }
+
+    let cancelled = false;
+    setLoadingSegments(true);
+    setSegmentsError('');
+
+    getSegments(flow.analysis)
+      .then((data) => {
+        if (!cancelled) setSegmentsList(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setSegmentsList([]);
+          setSegmentsError(
+            err instanceof Error
+              ? err.message
+              : 'Could not build buyer segments. Please try again.'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSegments(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentStep]);
 
   // Load leads when entering step 4
@@ -738,7 +763,7 @@ export function StartFlowPage() {
                         <td colSpan={5} className="p-4">
                           <EmptyState
                             title="No segments found"
-                            description="Return to step 1 to re-analyze your target website."
+                                                        description={segmentsError || 'Return to step 1 to re-analyze your target website.'}
                           />
                         </td>
                       </tr>
