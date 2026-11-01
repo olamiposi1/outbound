@@ -724,7 +724,7 @@ export function StartFlowPage() {
                 Who we would contact
               </h1>
               <p className="text-[14px] text-ink-2 leading-relaxed">
-                We scored each buyer segment against Harbor & Pine's commercial offerings. Select the segments you would like to target for lead sourcing.
+                                These are the groups most likely to need what you offer, based on your website. Fit scores are rough estimates. Select the segments you want to reach.
               </p>
             </div>
 
@@ -745,22 +745,19 @@ export function StartFlowPage() {
                       </th>
                       <th className="px-4 py-2 font-medium">Segment</th>
                       <th className="px-4 py-2 font-medium">Why</th>
-                      <th className="px-4 py-2 font-medium w-48">Fit score</th>
-                      <th className="px-4 py-2 font-medium text-right">
-                        Estimated leads (sample)
-                      </th>
+                                            <th className="px-4 py-2 font-medium w-48">Fit (estimate)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {loadingSegments ? (
                       <tr>
-                        <td colSpan={5} className="h-32 text-center text-ink-3">
+                        <td colSpan={4} className="h-32 text-center text-ink-3">
                           Loading buyer segments...
                         </td>
                       </tr>
                     ) : segmentsList.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="p-4">
+                        <td colSpan={4} className="p-4">
                           <EmptyState
                             title="No segments found"
                                                         description={segmentsError || 'Return to step 1 to re-analyze your target website.'}
@@ -808,9 +805,7 @@ export function StartFlowPage() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-2 text-right font-medium text-ink tabular-nums whitespace-nowrap">
-                              ~{seg.estimatedLeads}
-                            </td>
+                          
                           </tr>
                         );
                       })
