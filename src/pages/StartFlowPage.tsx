@@ -168,7 +168,7 @@ export function StartFlowPage() {
   };
 
   // Step 1: Submit site URL
-  const handleSiteSubmit = async (e: React.FormEvent) => {
+    const handleSiteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = siteUrl.trim();
     if (!clean) {
@@ -190,27 +190,31 @@ export function StartFlowPage() {
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches;
-
-    // Sequence stages over ~2.5 seconds
     const stageDuration = prefersReducedMotion ? 200 : 750;
 
+    // The stage lines are just animation while the real analysis runs
     const timer1 = setTimeout(() => setLoadingStage(2), stageDuration);
     const timer2 = setTimeout(() => setLoadingStage(3), stageDuration * 2);
-    const timer3 = setTimeout(async () => {
-      setLoadingStage(4);
+
+    try {
       const analysisData = await analyzeSite(clean);
       flow.setUrl(clean);
       flow.setAnalysis(analysisData);
-      setIsAnalyzing(false);
       setLoadingStage(0);
+      setIsAnalyzing(false);
       setStep(2);
-    }, stageDuration * 3);
-
-    return () => {
+    } catch (err) {
+      setUrlError(
+        err instanceof Error
+          ? err.message
+          : 'Could not analyze that website. Please try again.'
+      );
+      setLoadingStage(0);
+      setIsAnalyzing(false);
+    } finally {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
+    }
   };
 
   // Step 2 handlers

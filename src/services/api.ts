@@ -3,7 +3,6 @@ import {
   Segment,
   Lead,
   EmailDraft,
-  sampleSiteAnalysis,
   sampleSegments,
   sampleLeads,
   sampleEmailDrafts,
@@ -20,6 +19,7 @@ import {
   sampleThreads,
   sampleCampaignDetails,
 } from '../mock/data';
+import { supabase } from '../lib/supabase';
 
 const SIMULATED_DELAY_MS = 250;
 
@@ -28,21 +28,39 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Analyzes a given website URL and extracts business profile, target audiences, and competitors.
- * // TODO(backend): Call backend website crawler and LLM domain extraction service (e.g. POST /api/analyze).
+ * Analyzes a website through the smooth-function Edge Function.
+ * Competitors are not available yet, so that list is empty for now.
  */
 export async function analyzeSite(url: string): Promise<SiteAnalysis> {
-  await sleep(SIMULATED_DELAY_MS);
-  // Normalize url
-  const cleanUrl = url.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  const fallback = 'Could not analyze that website. Please try again.';
 
-  // Return sample analysis with the provided domain
+  const { data, error } = await supabase.functions.invoke('smooth-function', {
+    body: { url },
+  });
+
+  if (error) {
+    let message = fallback;
+    try {
+      const body = await error.context.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // keep the fallback message
+    }
+    throw new Error(message);
+  }
+
+  if (!data?.ok || !data.analysis) {
+    throw new Error(data?.error ?? fallback);
+  }
+
+  const a = data.analysis;
   return {
-    ...sampleSiteAnalysis,
-    url: cleanUrl || sampleSiteAnalysis.url,
+    url: new URL(data.url).hostname.replace(/^www\./, ''),
+    description: `${a.summary} ${a.offering}`.trim(),
+    targetAudiences: a.idealBuyers,
+    competitors: [],
   };
 }
-
 /**
  * Retrieves the evaluated buyer segments with fit scores and lead estimates.
  * // TODO(backend): Call backend ICP segmentation and scoring endpoint (e.g. GET /api/segments).
