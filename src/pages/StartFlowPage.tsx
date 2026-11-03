@@ -75,6 +75,7 @@ export function StartFlowPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadDraft, setLeadDraft] = useState<EmailDraft | null>(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
+    const [draftError, setDraftError] = useState('');
 
   // Drawer accessibility refs
   const lastActiveElementRef = useRef<HTMLElement | null>(null);
@@ -201,53 +202,37 @@ export function StartFlowPage() {
       setUploading(false);
     }
   };
-  // Load draft when lead is selected in drawer
+   // Load draft when lead is selected in drawer
   useEffect(() => {
-    if (selectedLead) {
-      setLoadingDraft(true);
-      getEmailDraft(selectedLead.id).then((draft) => {
-        setLeadDraft(draft);
-        setLoadingDraft(false);
-      });
-    } else {
+    if (!selectedLead) {
       setLeadDraft(null);
+      setDraftError('');
+      return;
     }
-  }, [selectedLead]);
 
-  // Focus trap for drawer
-  useEffect(() => {
-    if (selectedLead) {
-      closeDrawerBtnRef.current?.focus();
+    let cancelled = false;
+    setLoadingDraft(true);
+    setDraftError('');
+    setLeadDraft(null);
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          handleCloseDrawer();
-        } else if (e.key === 'Tab') {
-          if (!drawerRef.current) return;
-          const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    getEmailDraft(selectedLead, flow.analysis?.description ?? '')
+      .then((draft) => {
+        if (!cancelled) setLeadDraft(draft);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setDraftError(
+            err instanceof Error ? err.message : 'Could not write a draft. Please try again.'
           );
-          if (focusable.length === 0) return;
-          const first = focusable[0];
-          const last = focusable[focusable.length - 1];
-
-          if (e.shiftKey) {
-            if (document.activeElement === first) {
-              e.preventDefault();
-              last.focus();
-            }
-          } else {
-            if (document.activeElement === last) {
-              e.preventDefault();
-              first.focus();
-            }
-          }
         }
-      };
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDraft(false);
+      });
 
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
+    return () => {
+      cancelled = true;
+    };
   }, [selectedLead]);
 
   const handleOpenDrawer = (lead: Lead, targetEl: HTMLElement) => {
@@ -1102,7 +1087,11 @@ export function StartFlowPage() {
                       {leadDraft.subject}
                     </span>
                   </div>
-
+                  {leadDraft.hasMissingFact && (
+                    <div className="p-3 rounded-[8px] bg-warm-soft border border-border text-[12px] text-ink leading-relaxed">
+                      This draft is missing a fact from their site. Replace the [confirm ...] note with a real detail before this email can be sent.
+                    </div>
+                  )}
                   {/* Email Body (4 short sentences) */}
                   <div className="flex flex-col gap-2">
                     <span className="text-[12px] font-medium text-ink-3">
@@ -1132,7 +1121,7 @@ export function StartFlowPage() {
                                 </>
               ) : (
                 <div className="py-12 text-center text-ink-3 text-[14px]">
-                  Personal email drafts for your own leads come in a later step.
+                                   {draftError || 'No draft available for this lead.'}
                 </div>
               )}
             </div>

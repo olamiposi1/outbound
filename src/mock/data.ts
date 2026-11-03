@@ -27,6 +27,7 @@ export interface Lead {
   segmentId: string;
   segmentName: string;
   verified: boolean;
+    website?: string | null;
 }
 
 export interface EmailDraft {
@@ -35,6 +36,7 @@ export interface EmailDraft {
   body: string;
   evidence: string[];
   senderLine: string;
+    hasMissingFact?: boolean;
 }
 
 export const sampleHeroStatusMessages = [

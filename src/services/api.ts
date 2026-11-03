@@ -111,6 +111,7 @@ function rowToLead(row: LeadRow): Lead {
     segmentId: '',
     segmentName: row.segment_name ?? 'Not assigned',
     verified: false,
+        website: row.website,
   };
 }
 
@@ -123,13 +124,63 @@ export async function getLeads(): Promise<Lead[]> {
 }
 
 /**
- * Retrieves a personalized cold email draft for a lead.
- * Real leads have no drafts yet; only the old sample leads do.
+ * Writes a first-contact email for a lead through the smooth-function Edge Function.
+ * Only the business description and the lead's company and website are sent.
+ * The contact's name stays here and is used for the greeting.
  */
-export async function getEmailDraft(leadId: string): Promise<EmailDraft | null> {
-  await sleep(SIMULATED_DELAY_MS);
-  const draft = sampleEmailDrafts[leadId];
-  return draft ? { ...draft } : null;
+export async function getEmailDraft(
+  lead: Lead,
+  businessDescription: string
+): Promise<EmailDraft | null> {
+  // The old sample leads keep their sample drafts
+  const sample = sampleEmailDrafts[lead.id];
+  if (sample) return { ...sample };
+
+  if (businessDescription.trim().length < 20) {
+    throw new Error('Describe your business in step 2 first.');
+  }
+
+  const fallback = 'Could not write a draft. Please try again.';
+  const { data, error } = await supabase.functions.invoke('smooth-function', {
+    body: {
+      draft: {
+        businessDescription,
+        company: lead.company,
+        website: lead.website ?? null,
+      },
+    },
+  });
+
+  if (error) {
+    let message = fallback;
+    try {
+      const body = await error.context.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // keep the fallback message
+    }
+    throw new Error(message);
+  }
+
+  if (!data?.ok || !data.draft) {
+    throw new Error(data?.error ?? fallback);
+  }
+
+  const d = data.draft;
+  const first =
+    lead.name
+      .trim()
+      .split(/\s+/)
+      .find((w: string) => w && !/^(mr|mrs|ms|miss|dr|prof|chief|engr)\.?$/i.test(w)) ?? '';
+
+  return {
+    leadId: lead.id,
+    subject: d.subject,
+    body: String(d.body).replace('{{first_name}}', first || 'there'),
+    evidence: d.factsUsed,
+    senderLine: '[Sender name], [postal address]. Reply "stop" and we won\'t write again.',
+    hasMissingFact: d.hasMissingFact,
+  };
 }
 
 // In-memory state for interactive mutations
