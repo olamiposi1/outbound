@@ -49,7 +49,7 @@ export function StartFlowPage() {
 
   // Step 1 state
   const [siteUrl, setSiteUrl] = useState(
-    searchParams.get('url') || flow.url || 'harborandpine.example'
+        searchParams.get('url') || flow.url || ''
   );
   const [urlError, setUrlError] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -470,7 +470,7 @@ export function StartFlowPage() {
                 Paste your website
               </h1>
               <p className="text-[14px] text-ink-2 leading-relaxed">
-                The agent will crawl your public pages, discover what you offer, analyze local competitors, and evaluate potential buyer segments.
+                                We read your public pages to understand what you offer and who is most likely to buy it.
               </p>
             </div>
 
@@ -489,17 +489,7 @@ export function StartFlowPage() {
                   helperText="Enter a domain with or without https://"
                 />
 
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSiteUrl('harborandpine.example');
-                      setUrlError('');
-                    }}
-                    className="text-[13px] text-primary hover:underline cursor-pointer"
-                  >
-                    Use the sample site
-                  </button>
+                                <div className="flex items-center justify-end pt-1">
                   <Button type="submit" variant="primary" size="hero">
                     Analyze site
                   </Button>
@@ -555,7 +545,7 @@ export function StartFlowPage() {
                           : 'text-ink-3'
                       }
                     >
-                      Looking at competitors
+                                            Working out what you offer
                     </span>
                   </div>
 
@@ -577,7 +567,7 @@ export function StartFlowPage() {
                           : 'text-ink-3'
                       }
                     >
-                      Scoring buyer segments
+                    Writing your summary
                     </span>
                   </div>
                 </div>
@@ -668,11 +658,11 @@ export function StartFlowPage() {
                     Competitors
                   </span>
                   <span className="text-[12px] text-ink-3">
-                    Fictional Austin alternatives
+                                        Optional. Add any you know.
                   </span>
                 </div>
 
-                <div className="flex flex-col divide-y divide-border border border-border rounded-[8px] overflow-hidden">
+                                <div className="flex flex-col divide-y divide-border border border-border rounded-[8px] overflow-hidden empty:hidden">
                   {flow.analysis.competitors.map((comp) => (
                     <div
                       key={comp.id}
@@ -698,6 +688,11 @@ export function StartFlowPage() {
                   ))}
                 </div>
 
+                {flow.analysis.competitors.length === 0 && (
+                  <p className="text-[13px] text-ink-2">
+                    No competitors yet. Add the ones you know, or skip this for now.
+                  </p>
+                )}
                 {!showAddComp ? (
                   <div className="pt-1">
                     <Button
