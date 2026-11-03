@@ -7,7 +7,7 @@ import { usePageMeta } from '../utils/usePageMeta';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Badge } from '../components/Badge';
-import { ChevronDown, ArrowRight, Check, X } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 
 export function LandingPage() {
   usePageMeta(undefined, `${brand.name} — ${brand.tagline}`);
@@ -16,11 +16,7 @@ export function LandingPage() {
 
   const [inputUrl, setInputUrl] = useState('');
   const [urlError, setUrlError] = useState('');
-  const [signInOpen, setSignInOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-
-  const signInButtonRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -176,35 +172,6 @@ export function LandingPage() {
     };
   }, [prefersReducedMotion]);
 
-  // Close sign-in popover on click outside or Esc
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(event.target as Node) &&
-        signInButtonRef.current &&
-        !signInButtonRef.current.contains(event.target as Node)
-      ) {
-        setSignInOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setSignInOpen(false);
-        signInButtonRef.current?.focus();
-      }
-    }
-
-    if (signInOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [signInOpen]);
 
   const handleHeroSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,7 +264,6 @@ export function LandingPage() {
           {/* Actions */}
           <div className="relative flex items-center gap-3">
                <Button
-     ref={signInButtonRef}
      variant="ghost"
      size="default"
      onClick={() => navigate(user ? '/app' : '/login')}
@@ -305,29 +271,7 @@ export function LandingPage() {
      {user ? 'Open app' : 'Sign in'}
    </Button>
 
-            {/* Sign in preview popover with soft shadow */}
-            {signInOpen && (
-              <div
-                ref={popoverRef}
-                role="dialog"
-                aria-label="Sign in notice"
-                className="absolute right-0 top-[44px] w-[260px] p-3.5 bg-surface border border-border rounded-[8px] shadow-md z-40 text-left flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-ink">Preview note</span>
-                  <button
-                    onClick={() => setSignInOpen(false)}
-                    className="text-ink-3 hover:text-ink p-0.5 rounded-[4px]"
-                    aria-label="Close notification"
-                  >
-                    <X className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
-                </div>
-                <p className="text-[12px] text-ink-2 leading-relaxed">
-                  Sign in isn't available in this preview.
-                </p>
-              </div>
-            )}
+      
 
             <Button
               variant="primary"
@@ -1064,7 +1008,7 @@ export function LandingPage() {
                                     <span className="text-[22px] font-semibold text-ink">
                     Pricing is not final yet
                   </span>
-                  <span className="text-[14px] text-ink-2">/ delivered lead</span>
+                
                 </div>
 
                 <p className="text-[14px] text-ink-2 leading-relaxed">
