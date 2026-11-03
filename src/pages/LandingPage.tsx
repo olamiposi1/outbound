@@ -224,30 +224,30 @@ export function LandingPage() {
     el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
   };
 
-  const faqItems = [
+    const faqItems = [
     {
       q: 'How does it work?',
-      a: '[Explanation placeholder: The agent visits your website to understand your offering, identifies fitting customer segments, sources verified business emails, and drafts personalized messages.]',
+      a: 'You paste your website. We read it, work out who is most likely to buy from you, and write a short personal email for each lead using facts from their own website. You review every email before anything is sent.',
     },
     {
       q: 'Will it work for my business?',
-      a: '[Explanation placeholder: It is designed for companies selling services or products to other businesses with identifiable buyers.]',
+      a: 'It suits businesses that sell services or products to other businesses, such as web design, cleaning, accounting or logistics. It works best when your buyers have a website we can read.',
     },
     {
       q: 'Where do the leads come from?',
-      a: '[Explanation placeholder: Leads are gathered from public domain registries, company directories, and verified against live mail servers.]',
+      a: 'For now you upload a list of businesses as a CSV file, and we read each business’s public website. Automatic lead search is planned.',
     },
     {
       q: 'Whose mailboxes send the emails?',
-      a: '[Explanation placeholder: Messages are sent from your authenticated work mailboxes so replies go straight to your inbox.]',
+      a: 'Sending is not switched on yet. When it is, emails will go from your own mailbox so replies come straight to you.',
     },
     {
       q: 'How much does it cost?',
-      a: '[Explanation placeholder: You only pay for sent emails. You set a daily sending budget and can adjust or pause anytime.]',
+      a: 'The preview is free and needs no card. Pricing for sending will be shared before it launches.',
     },
     {
       q: 'What results can I expect?',
-      a: '[Explanation placeholder: Results vary by industry and market proposition. You can review all copy and verified recipient criteria before sending.]',
+      a: 'We cannot promise results. Replies depend on your offer, your market and the list you contact. You read every email and decide what gets sent.',
     },
   ];
 
@@ -628,7 +628,7 @@ export function LandingPage() {
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="e.g. harborandpine.example"
+                                            placeholder="yourcompany.com"
                       value={inputUrl}
                       onChange={(e) => {
                         setInputUrl(e.target.value);
@@ -648,15 +648,8 @@ export function LandingPage() {
                     Find my buyers
                   </Button>
                 </div>
-                <div className="flex items-center justify-between text-[12px] text-ink-3">
+                                <div className="text-[12px] text-ink-3">
                   <span>Free preview. No card needed.</span>
-                  <button
-                    type="button"
-                    onClick={() => setInputUrl('harborandpine.example')}
-                    className="text-primary hover:underline cursor-pointer"
-                  >
-                    Try sample site
-                  </button>
                 </div>
               </form>
             </div>
@@ -1068,8 +1061,8 @@ export function LandingPage() {
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[32px] font-bold text-ink tabular-nums font-mono">
-                    [price per email]
+                                    <span className="text-[22px] font-semibold text-ink">
+                    Pricing is not final yet
                   </span>
                   <span className="text-[14px] text-ink-2">/ delivered lead</span>
                 </div>
@@ -1079,8 +1072,8 @@ export function LandingPage() {
                 </p>
 
                 <div className="p-3 rounded-[8px] bg-surface-muted text-[13px] text-ink-2 flex items-center justify-between border border-border">
-                  <span>Included trial allocation</span>
-                  <span className="font-medium text-ink font-mono">[free credits]</span>
+                                    <span>During the preview</span>
+                  <span className="font-medium text-ink">Free</span>
                 </div>
 
                 <Button
